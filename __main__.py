@@ -140,7 +140,7 @@ def _make_pathes(dir: str) -> Tuple[str, str]:
 def _isdirs_or_die(*directories):
     for directory in directories:
         if not os.path.isdir(directory):
-            _echo(f'{directory} not found')
+            click.echo(f'{directory} not found')
             exit(errno.ENOENT)
         _echo(f'{directory} exists')
 
