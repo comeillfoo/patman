@@ -108,7 +108,7 @@ def _patch(target: str, patch: str, extra_args: list[str]) -> PatchResult:
 
 
 @click.group()
-@click.option('-v', '--verbose', count=True)
+@click.option('-v', '--verbose', count=True, help='Output extra information.')
 def cli(verbose: bool):
     global VERBOSE
     VERBOSE = verbose
@@ -121,6 +121,7 @@ def cli(verbose: bool):
               help='Path where to put the compared directories')
 @click.argument('project_path', type=click.Path(exists=True))
 def deploy(directory: str, project_path: str):
+    """Replicates project to folders that are used for testing patches."""
     dira = os.path.join(directory, 'a')
     shutil.copytree(project_path, dira)
     _echo(f'copied {project_path} to {dira}')
@@ -153,6 +154,7 @@ def _isdirs_or_die(*directories):
 @click.argument('patches', nargs=-1,
                 type=click.Path(exists=True))
 def apply(directory: str, patches):
+    """Tries to apply patches."""
     fails = 0
     dira, dirb = _make_pathes(directory)
     _isdirs_or_die(dira, dirb)
@@ -178,6 +180,7 @@ def _revert(target: str, patch: str, extra_args: list[str]) -> PatchResult:
 @click.argument('patches', nargs=-1,
                 type=click.Path(exists=True))
 def revert(directory: str, patches):
+    """Reverts patches."""
     for patch in reversed(patches):
         _echo(f'reverting {patch}...')
         rc = _revert(directory, patch, ['-d'])
@@ -194,6 +197,7 @@ def revert(directory: str, patches):
 @click.argument('patches', nargs=-1,
                 type=click.Path(exists=True))
 def dehunk(directory: str, patches):
+    """Excludes succesful hunks in patches."""
     fails = 0
     dira, dirb = _make_pathes(directory)
     _isdirs_or_die(dira, dirb)
@@ -215,7 +219,6 @@ def dehunk(directory: str, patches):
             fails += 1
             _redeploy(dira, dirb)
     exit(fails)
-
 
 
 if __name__ == '__main__':
