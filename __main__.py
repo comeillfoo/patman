@@ -2,6 +2,19 @@
 import click, os, shutil, enum, errno, re, subprocess as sp
 from typing import Tuple
 
+class TextStyle:
+   PURPLE = '\033[95m'
+   CYAN = '\033[96m'
+   DARKCYAN = '\033[36m'
+   BLUE = '\033[94m'
+   GREEN = '\033[92m'
+   YELLOW = '\033[93m'
+   RED = '\033[91m'
+   BOLD = '\033[1m'
+   UNDERLINE = '\033[4m'
+   END = '\033[0m'
+
+
 class PatchResult(enum.Enum):
     OK = 0
     REVERSE_APPLIED = 1
@@ -22,9 +35,9 @@ REASONS = {
 
 VERBOSE = False
 
-OK = '\u2713'
-NOTOK = '\u274c'
-WARN = '\u26a0'
+OK = f'{TextStyle.BOLD}{TextStyle.GREEN}\u2713{TextStyle.END}'
+NOTOK = f'{TextStyle.BOLD}{TextStyle.RED}\u2717{TextStyle.END}'
+WARN = f'{TextStyle.BOLD}{TextStyle.YELLOW}\u26a0{TextStyle.END}'
 
 
 def _echo(text: str):
