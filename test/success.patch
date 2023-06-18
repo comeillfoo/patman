@@ -1,0 +1,11 @@
+diff -updrN -x '*.orig' a/hello.c b/hello.c
+--- a/hello.c	2023-06-18 01:40:04.110392763 +0100
++++ b/hello.c	2023-06-18 01:40:08.790392896 +0100
+@@ -11,6 +11,6 @@ void hello(const char* what)
+ 
+ int main(int argc, char** argv)
+ {
+-    hello("World");
++    hello("nothing");
+     return 0;
+ }
