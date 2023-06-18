@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-import click, os, shutil, enum, errno, subprocess as sp
+import click, os, shutil, enum, errno, re, subprocess as sp
 from typing import Tuple
 
 class PatchResult(enum.Enum):
@@ -8,13 +8,23 @@ class PatchResult(enum.Enum):
     HUNK_SUCCEED = 2
     HUNK_FAILED = 3
     INVALID_FORMAT = 4
-    ERROR = 5
+    EOF = 5
+    ERROR = 6
+
+REASONS = {
+    PatchResult.REVERSE_APPLIED: 'Already applied',
+    PatchResult.HUNK_FAILED: 'Hunk failed',
+    PatchResult.INVALID_FORMAT: 'Invalid format',
+    PatchResult.EOF: 'Unexpected end of patch',
+    PatchResult.ERROR: 'Error',
+}
 
 
 VERBOSE = False
 
-OK='\u2713'
-NOTOK='\u274c'
+OK = '\u2713'
+NOTOK = '\u274c'
+WARN = '\u26a0'
 
 
 def _echo(text: str):
@@ -35,11 +45,22 @@ def _patch(target: str, patch: str, extra_args: list[str]) -> PatchResult:
     stdout, stderr = '', ''
     with open(patch, 'rb') as f:
         stdout, stderr = p.communicate(input=f.read())
-    _echo(stdout.decode())
-    _echo(stderr.decode())
+        stdout, stderr = stdout.decode(), stderr.decode()
+    _echo(f'stdout: {stdout}')
+    _echo(f'stderr: {stderr}')
     if p.returncode == 0:
+        if re.search('Hunk\s*#\d+\s*succeeded', stdout) is not None:
+            return PatchResult.HUNK_SUCCEED
         return PatchResult.OK
-    # TODO: parse stdout for proper return codes
+    # TODO: parse stdout/stderr for proper return codes
+    if 'patch: **** Only garbage was found in the patch input.' in stderr:
+        return PatchResult.INVALID_FORMAT
+    elif 'patch: **** unexpected end of file in patch' in stderr:
+        return PatchResult.EOF
+    elif 'Assume -R' in stdout:
+        if 'patching' in stdout:
+            return PatchResult.HUNK_FAILED
+        return PatchResult.REVERSE_APPLIED
     return PatchResult.ERROR
 
 
@@ -96,12 +117,14 @@ def apply(directory: str, patches):
     for patch in patches:
         _echo(f'applying {patch}...')
         rc = _patch(dirb, patch, ['-d'])
-        if rc != PatchResult.OK:
-            click.echo(f'{NOTOK} {patch}')
+        if rc == PatchResult.OK:
+            click.echo(f'{OK} {patch}')
+        elif rc == PatchResult.HUNK_SUCCEED:
+            click.echo(f'{WARN} {patch}')
+        else:
+            click.echo(f'{NOTOK} {patch} ({REASONS[rc]})')
             fails += 1
             _redeploy(dira, dirb)
-        else:
-            click.echo(f'{OK} {patch}')
     exit(fails)
 
 
