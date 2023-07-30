@@ -94,17 +94,23 @@ def _patch(target: str, patch: str, extra_args: list[str]) -> PatchResult:
         if re.search('Hunk\s*#\d+\s*succeeded', stdout) is not None:
             return PatchResult.HUNK_SUCCEED
         return PatchResult.OK
-    if 'patch: **** Only garbage was found in the patch input.' in stderr:
-        return PatchResult.INVALID_FORMAT
-    elif 'patch: **** unexpected end of file in patch' in stderr:
-        return PatchResult.EOF
 
-    is_partly_succeeded = 'patching' in stdout
+    if 'patch: ****' in stderr:
+        is_gibberish = 'Only garbage was found in the patch input.' in stderr
+        is_malformed = 'malformed patch at' in stderr
+        if is_gibberish or is_malformed:
+            return PatchResult.INVALID_FORMAT
+        elif 'unexpected end of file in patch' in stderr:
+            return PatchResult.EOF
+        return PatchResult.ERROR
+
+    is_partly_succeeded = re.search('(patching\s*.*\n(Hunk\s*#\d+\s*succeeded.*\n)?){2,}', stdout) is not None
+    is_hunk_failed = re.search('Hunk\s*#\d+\s*FAILED', stdout) is not None
     if 'Assume -R' in stdout:
         return PatchResult.HUNK_FAILED if is_partly_succeeded else PatchResult.REVERSE_APPLIED
     elif 'can\'t find file to patch' in stdout:
         return PatchResult.HUNK_FAILED if is_partly_succeeded else PatchResult.FILE_NOT_FOUND
-    return PatchResult.ERROR
+    return PatchResult.HUNK_FAILED if is_hunk_failed or is_partly_succeeded else PatchResult.ERROR
 
 
 @click.group()
