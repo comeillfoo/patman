@@ -217,7 +217,7 @@ def dehunk(directory: str, patches):
             _echo(f'no hunks for {patch} -- SKIP')
         else:
             fails += 1
-            _redeploy(dira, dirb)
+    _redeploy(dira, dirb)
     exit(fails)
 
 
