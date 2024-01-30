@@ -1,0 +1,30 @@
+name: Static Analysis
+
+on: [push]
+
+env:
+  PYTHON_VERSION: '3.9.2'
+
+jobs:
+  linting:
+    name: Linter
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: 'pip'
+      - run: pip install pylint
+      - run: pylint *.py
+
+  typechecking:
+    name: Static type check
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: 'pip'
+      - run: pip install mypy
+      - run: mypy *.py
